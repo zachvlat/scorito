@@ -21,6 +21,7 @@ import com.zachvlat.footballscores.data.model.Stage
 import com.zachvlat.footballscores.data.model.Team
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.Locale
 
 @Composable
 private fun parseColor(colorString: String): Color {
@@ -149,7 +150,31 @@ private fun ScoreSection(event: Event) {
         Spacer(modifier = Modifier.height(4.dp))
         
         // Match Status
-        StatusBadge(status = event.Eps, minutes = event.ErnInf)
+        StatusBadge(status = event.Eps, minutes = event.Eps, startTime = event.Esd)
+    }
+}
+
+private fun formatStartTime(timestamp: Long): String {
+    return try {
+        // Parse YYYYMMDDHHMMSS format
+        val timeStr = timestamp.toString()
+        if (timeStr.length == 14) {
+            val year = timeStr.substring(0, 4).toInt()
+            val month = timeStr.substring(4, 6).toInt() - 1 // Calendar months are 0-based
+            val day = timeStr.substring(6, 8).toInt()
+            val hour = timeStr.substring(8, 10).toInt()
+            val minute = timeStr.substring(10, 12).toInt()
+            
+            val calendar = Calendar.getInstance()
+            calendar.set(year, month, day, hour, minute)
+            
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            timeFormat.format(calendar.time)
+        } else {
+            timestamp.toString()
+        }
+    } catch (e: Exception) {
+        timestamp.toString()
     }
 }
 
@@ -167,15 +192,21 @@ private fun getDisplayScore(tr1: String?, tr2: String?, status: String): String 
 }
 
 @Composable
-private fun StatusBadge(status: String, minutes: String?) {
+private fun StatusBadge(status: String, minutes: String?, startTime: Long?) {
     val (statusText, color) = when (status) {
         "FT" -> "FT" to Color.Gray
         "AET" -> "AET" to Color.Gray
         "HT" -> "HT" to Color.Magenta
-        "NS" -> "NS" to Color.Blue
+        "NS" -> {
+            // Show kickoff time for matches that haven't started
+            val timeText = startTime?.let { formatStartTime(it) } ?: "NS"
+            timeText to Color.Blue
+        }
         else -> {
             // Live match with minutes
-            val liveMinutes = minutes?.let { "${it}'" } ?: status
+            val liveMinutes = minutes?.let { 
+                if (it.endsWith("'")) it else "${it}'" 
+            } ?: status
             liveMinutes to Color.Green
         }
     }
