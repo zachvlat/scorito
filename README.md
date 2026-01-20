@@ -1,4 +1,4 @@
-# FootballScores
+# Football Scores
 
 A modern Android app for tracking live football (soccer) scores and match results.
 
