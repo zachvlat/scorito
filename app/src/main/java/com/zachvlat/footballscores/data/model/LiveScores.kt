@@ -76,7 +76,7 @@ data class Team(
     fun getTeamImageUrl(): String? {
         return Img?.let { 
             if (it.startsWith("enet")) {
-                "https://storage.livescore.com/images/team/medium/$it"
+                "https://storage.livescore.com/images/team/high/$it"
             } else {
                 it
             }
