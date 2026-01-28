@@ -60,6 +60,7 @@ fun LiveScoresScreen() {
     
     var showDateDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showLiveOnly by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
     
     Scaffold(
@@ -123,18 +124,47 @@ fun LiveScoresScreen() {
                     )
                 )
                 
-                // Search Bar
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    onSearch = { 
-                        keyboardController?.hide()
-                    },
-                    placeholder = "Search teams...",
+                // Search Bar with Live Filter
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                ) {
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onSearch = { 
+                            keyboardController?.hide()
+                        },
+                        placeholder = "Search teams...",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Live Now Filter Chip
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        FilterChip(
+                            selected = showLiveOnly,
+                            onClick = { showLiveOnly = !showLiveOnly },
+                            label = { 
+                                Text("Live Now") 
+                            },
+                            leadingIcon = {
+                                if (showLiveOnly) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     ) { paddingValues ->
@@ -149,46 +179,61 @@ fun LiveScoresScreen() {
                 }
                 
                 is LiveScoresUiState.Success -> {
-                    val filteredStages = if (searchQuery.isBlank()) {
-                        state.response.Stages
-                    } else {
-                        state.response.Stages.map { stage ->
-                            val filteredEvents = stage.Events.filter { event ->
+                    val filteredStages = state.response.Stages.map { stage ->
+                        var filteredEvents = stage.Events
+                        
+                        // Apply search filter
+                        if (searchQuery.isNotBlank()) {
+                            filteredEvents = filteredEvents.filter { event ->
                                 val team1Name = event.T1.firstOrNull()?.Nm?.lowercase() ?: ""
                                 val team2Name = event.T2.firstOrNull()?.Nm?.lowercase() ?: ""
                                 val query = searchQuery.lowercase()
                                 
                                 team1Name.contains(query) || team2Name.contains(query)
                             }
-                            
-                            // Create new Stage object with filtered events - use all original stage properties
-                            com.zachvlat.footballscores.data.model.Stage(
-                                Sid = stage.Sid ?: "",
-                                Snm = stage.Snm ?: "",
-                                Scd = stage.Scd ?: "",
-                                Cnm = stage.Cnm ?: "",
-                                CnmT = stage.CnmT ?: "",
-                                Csnm = stage.Csnm ?: "",
-                                Ccd = stage.Ccd ?: "",
-                                CompId = stage.CompId ?: "",
-                                CompN = stage.CompN ?: "",
-                                CompUrlName = stage.CompUrlName ?: "",
-                                CompD = stage.CompD ?: "",
-                                CompST = stage.CompST ?: "",
-                                Scu = stage.Scu ?: 0,
-                                badgeUrl = stage.badgeUrl,
-                                firstColor = stage.firstColor ?: "",
-                                Events = filteredEvents
-                            )
-                        }.filter { it.Events.isNotEmpty() }
-                    }
+                        }
+                        
+                        // Apply live filter
+                        if (showLiveOnly) {
+                            filteredEvents = filteredEvents.filter { event ->
+                                event.isLive()
+                            }
+                        }
+                        
+                        // Create new Stage object with filtered events - use all original stage properties
+                        com.zachvlat.footballscores.data.model.Stage(
+                            Sid = stage.Sid ?: "",
+                            Snm = stage.Snm ?: "",
+                            Scd = stage.Scd ?: "",
+                            Cnm = stage.Cnm ?: "",
+                            CnmT = stage.CnmT ?: "",
+                            Csnm = stage.Csnm ?: "",
+                            Ccd = stage.Ccd ?: "",
+                            CompId = stage.CompId ?: "",
+                            CompN = stage.CompN ?: "",
+                            CompUrlName = stage.CompUrlName ?: "",
+                            CompD = stage.CompD ?: "",
+                            CompST = stage.CompST ?: "",
+                            Scu = stage.Scu ?: 0,
+                            badgeUrl = stage.badgeUrl,
+                            firstColor = stage.firstColor ?: "",
+                            Events = filteredEvents
+                        )
+                    }.filter { it.Events.isNotEmpty() }
                     
                     if (filteredStages.isEmpty()) {
+                        val message = when {
+                            showLiveOnly && searchQuery.isNotBlank() -> 
+                                "No live matches found for \"${searchQuery}\""
+                            showLiveOnly -> 
+                                "No live matches found for selected date"
+                            searchQuery.isNotBlank() -> 
+                                "No matches found for \"${searchQuery}\""
+                            else -> 
+                                "No matches found for selected date"
+                        }
                         EmptyState(
-                            message = if (searchQuery.isBlank()) 
-                                "No matches found for selected date" 
-                            else 
-                                "No matches found for \"$searchQuery\"",
+                            message = message,
                             onRefresh = { viewModel.refresh() }
                         )
                     } else {
@@ -273,9 +318,7 @@ fun MatchList(stages: List<com.zachvlat.footballscores.data.model.Stage>, viewMo
                 
                 // Matches for this competition
                 items(stage.Events) { event ->
-                    MatchCard(event = event, onMatchClick = { matchId ->
-                        viewModel.onMatchClick(matchId)
-                    })
+                    MatchCard(event = event)
                 }
             }
         }

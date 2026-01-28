@@ -54,7 +54,14 @@ data class Event(
     val EOX: Long,
     val Spid: Int,
     val Pid: Int
-)
+) {
+    fun isLive(): Boolean {
+        return when (Eps.uppercase()) {
+            "LIVE", "HT", "2H", "1H", "ET", "BT", "P", "AP" -> true
+            else -> false
+        }
+    }
+}
 
 data class Team(
     val ID: String,

@@ -49,8 +49,7 @@ fun MatchCard(event: Event, onMatchClick: (String) -> Unit = {}, modifier: Modif
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable { onMatchClick(event.Eid) },
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
