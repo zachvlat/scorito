@@ -49,8 +49,11 @@ fun MatchCard(event: Event, onMatchClick: (String) -> Unit = {}, modifier: Modif
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(horizontal = 0.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -270,9 +273,9 @@ fun CompetitionHeader(stage: Stage) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 0.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
@@ -297,26 +300,26 @@ fun CompetitionHeader(stage: Stage) {
             
             // Competition Info
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stage.CompN ?: stage.Snm,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                
-                if (!stage.Cnm.isNullOrEmpty() && stage.Cnm != stage.CompN) {
-                    Text(
-                        text = stage.Cnm,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-                
-                Text(
-                    text = "${stage.Events.size} matches",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                )
+                 Text(
+                     text = stage.CompN ?: stage.Snm,
+                     style = MaterialTheme.typography.titleMedium,
+                     fontWeight = FontWeight.Bold,
+                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                 )
+                 
+                 if (!stage.Cnm.isNullOrEmpty() && stage.Cnm != stage.CompN) {
+                     Text(
+                         text = stage.Cnm,
+                         style = MaterialTheme.typography.bodyMedium,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                     )
+                 }
+                 
+                 Text(
+                     text = "${stage.Events.size} matches",
+                     style = MaterialTheme.typography.bodySmall,
+                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                 )
             }
         }
     }

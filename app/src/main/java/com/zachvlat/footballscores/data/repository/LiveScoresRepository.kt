@@ -3,6 +3,7 @@ package com.zachvlat.footballscores.data.repository
 import android.util.Log
 import com.zachvlat.footballscores.data.api.LiveScoresApi
 import com.zachvlat.footballscores.data.api.MatchDetailApi
+import com.zachvlat.footballscores.data.api.BasketballApi
 import com.zachvlat.footballscores.data.model.LiveScoresResponse
 import com.zachvlat.footballscores.data.model.MatchDetailResponse
 import okhttp3.OkHttpClient
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit
 class LiveScoresRepository {
     
     private val api: LiveScoresApi
+    private val basketballApi: BasketballApi
     private val matchDetailApi: MatchDetailApi
     
     init {
@@ -40,6 +42,7 @@ class LiveScoresRepository {
             .build()
         
         api = retrofit.create(LiveScoresApi::class.java)
+        basketballApi = retrofit.create(BasketballApi::class.java)
         matchDetailApi = matchDetailRetrofit.create(MatchDetailApi::class.java)
     }
     
@@ -63,6 +66,30 @@ class LiveScoresRepository {
             Result.success(response)
         } catch (e: Exception) {
             Log.e("LiveScoresRepository", "Error fetching live scores for date: $dateString", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getTodayBasketballScores(): Result<LiveScoresResponse> {
+        return try {
+            val url = BasketballApi.getTodayUrl()
+            Log.d("LiveScoresRepository", "Fetching basketball URL: $url")
+            val response = basketballApi.getBasketballScores(url)
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("LiveScoresRepository", "Error fetching basketball scores", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getBasketballScoresForDate(dateString: String): Result<LiveScoresResponse> {
+        return try {
+            val url = BasketballApi.getUrlForDateString(dateString)
+            Log.d("LiveScoresRepository", "Fetching basketball URL: $url")
+            val response = basketballApi.getBasketballScores(url)
+            Result.success(response)
+        } catch (e: Exception) {
+            Log.e("LiveScoresRepository", "Error fetching basketball scores for date: $dateString", e)
             Result.failure(e)
         }
     }
