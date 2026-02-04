@@ -1,7 +1,6 @@
 # Scorito
 
-<img width="200" alt="image" src="https://github.com/user-attachments/assets/d5775d58-6516-47c4-9c50-a4d35d820df7" />
-
+<img width="200" alt="image" src="https://github.com/user-attachments/assets/30dc085e-8330-41e2-a321-099d259d1dc0" />
 
 A modern Android app for tracking live football (soccer) scores and match results.
 
