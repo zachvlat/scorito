@@ -47,12 +47,8 @@ fun MatchDetailBottomSheet(
             }
 
             if (lineups != null) {
-                lineups.Lu?.forEach { teamLineup ->
-                    if (teamLineup.Tnb == 1 || teamLineup.Tnb == 2) {
-                        item {
-                            TeamLineupSection(teamLineup, event, teamLineup.Tnb)
-                        }
-                    }
+                item {
+                    LineupsSection(lineups, event)
                 }
 
                 lineups.Subs?.let { subs ->
@@ -187,16 +183,14 @@ private fun TeamColumn(name: String, imageUrl: String?) {
 }
 
 @Composable
-private fun TeamLineupSection(teamLineup: TeamLineup, event: Event?, teamNumber: Int) {
-    val teamName = if (teamNumber == 1) {
-        event?.T1?.firstOrNull()?.Nm ?: "Team 1"
-    } else {
-        event?.T2?.firstOrNull()?.Nm ?: "Team 2"
-    }
+private fun LineupsSection(lineups: LineupsResponse, event: Event?) {
+    val team1Lineup = lineups.Lu?.find { it.Tnb == 1 }
+    val team2Lineup = lineups.Lu?.find { it.Tnb == 2 }
 
-    val formation = teamLineup.Fo?.joinToString("-") ?: ""
-    val starters = teamLineup.Ps.filter { it.isStarting() }
-    val coach = teamLineup.Ps.find { it.isCoach() }
+    if (team1Lineup == null && team2Lineup == null) return
+
+    val team1Name = event?.T1?.firstOrNull()?.Nm ?: "Team 1"
+    val team2Name = event?.T2?.firstOrNull()?.Nm ?: "Team 2"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -209,92 +203,108 @@ private fun TeamLineupSection(teamLineup: TeamLineup, event: Event?, teamNumber:
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = teamName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                if (formation.isNotEmpty()) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = formation,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            if (coach != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Coach: ${coach.getFullName()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = "Starting Lineups",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val groupedStarters = starters.groupBy { it.Pos }.toSortedMap()
-            groupedStarters.forEach { (position, players) ->
-                val positionName = when (position) {
-                    1 -> "Goalkeeper"
-                    2 -> "Defenders"
-                    3 -> "Midfielders"
-                    4 -> "Forwards"
-                    else -> "Other"
-                }
-                Text(
-                    text = positionName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(vertical = 4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                StartingXIColumn(
+                    teamLineup = team1Lineup,
+                    teamName = team1Name,
+                    modifier = Modifier.weight(1f)
                 )
-                players.forEach { player ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                StartingXIColumn(
+                    teamLineup = team2Lineup,
+                    teamName = team2Name,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StartingXIColumn(teamLineup: TeamLineup?, teamName: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        val formation = teamLineup?.Fo?.joinToString("-")
+        val starters = teamLineup?.Ps?.filter { it.isStarting() } ?: emptyList()
+        val coach = teamLineup?.Ps?.find { it.isCoach() }
+
+        Text(
+            text = teamName,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2
+        )
+        if (!formation.isNullOrEmpty()) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = formation,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        if (coach != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Coach: ${coach.getFullName()}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val groupedStarters = starters.groupBy { it.Pos }.toSortedMap()
+        groupedStarters.forEach { (position, players) ->
+            val positionName = when (position) {
+                1 -> "Goalkeeper"
+                2 -> "Defenders"
+                3 -> "Midfielders"
+                4 -> "Forwards"
+                else -> "Other"
+            }
+            Text(
+                text = positionName,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+            players.forEach { player ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(24.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     ) {
-                        Surface(
-                            modifier = Modifier.size(24.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "${player.Snu}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = player.getFullName(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
-                        player.Fp?.let { fp ->
+                        Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = fp.replace(":", ","),
+                                text = "${player.Snu}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = player.getFullName(),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 2
+                    )
                 }
             }
         }
